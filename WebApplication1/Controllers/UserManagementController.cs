@@ -36,9 +36,6 @@ namespace UserManagement.Controllers
             }
         }
 
-        private const string AdminLogin = "admin";
-        private const string AdminPassword = "admin";
-
         [HttpPost("NewUser")]
         [SwaggerOperation("Create a new user")]
         public IActionResult CreateUser([FromBody] CreateUserRequest request)
@@ -74,9 +71,7 @@ namespace UserManagement.Controllers
         [SwaggerOperation("Update the name, gender, or birthday of a user")]
         public IActionResult Update([FromBody] UpdateUserRequest request)
         {
-            if (!IsAuthorized(request.Login, request.Password))
-                return Unauthorized();
-            var currentUser = users.FirstOrDefault(u => u.Login == request.Login);            
+            var currentUser = GetUserOrNull(request.Login, request.Password);            
             if (currentUser == null)
                 return Unauthorized();
 
@@ -103,7 +98,7 @@ namespace UserManagement.Controllers
         [SwaggerOperation("Update the password of a user")]
         public IActionResult UpdatePassword([FromBody] UpdatePasswordRequest request)
         {
-            var currentUser = users.FirstOrDefault(u => u.Login == request.Login && u.Password == request.Password);
+            var currentUser = GetUserOrNull(request.Login, request.Password);
             if (currentUser == null)
                 return Unauthorized();
 
@@ -125,7 +120,7 @@ namespace UserManagement.Controllers
         [SwaggerOperation("Update the login of a user")]
         public IActionResult UpdateLogin([FromBody] UpdateLoginRequest request)
         {
-            var currentUser = users.FirstOrDefault(u => u.Login == request.Login && u.Password == request.Password);
+            var currentUser = GetUserOrNull(request.Login, request.Password);
             if (currentUser == null)
                 return Unauthorized();
 
@@ -189,9 +184,10 @@ namespace UserManagement.Controllers
         [SwaggerOperation("Get a user by login and password")]
         public IActionResult GetUserByLoginAndPassword([FromQuery] Credentials credentials, [FromQuery] Credentials request)
         {
-            var currentUser = users.FirstOrDefault(u => u.Login == credentials.Login && u.Password == credentials.Password);
+            var currentUser = GetUserOrNull(credentials.Login, credentials.Password);
             if (currentUser == null)
                 return Unauthorized();
+
 
             if (!((request.Login == credentials.Login) && (request.Password == credentials.Password)))
                 return NotFound("is it not your login or password");
@@ -231,10 +227,8 @@ namespace UserManagement.Controllers
         [SwaggerOperation("Delete a user by login (soft or hard delete)")]
         public IActionResult DeleteUser([FromQuery] string userLogin, [FromBody] DeleteUserRequest request)
         {
-            if (!isAdmin(request.Login, request.Password))
-                return Forbid();
 
-            var currentUser = users.FirstOrDefault(u => u.Login == request.Login);
+            var currentUser = GetAdminOrNull(request.Login, request.Password);
             if (currentUser == null)
                 return Unauthorized();
 
@@ -281,10 +275,22 @@ namespace UserManagement.Controllers
             return user != null;
         }
 
+        private User? GetUserOrNull(string login, string password)
+        {
+            var user = users.FirstOrDefault(u => u.Login == login && u.Password == password);
+            return user;
+        }
+
         private bool isAdmin(string login, string password)
         {
             var user = users.FirstOrDefault(u => u.Login == login && u.Password == password && u.Admin);
             return user != null;
+        }
+
+        private User? GetAdminOrNull(string login, string password)
+        {
+            var user = users.FirstOrDefault(u => u.Login == login && u.Password == password && u.Admin);
+            return user;
         }
     }
 }
