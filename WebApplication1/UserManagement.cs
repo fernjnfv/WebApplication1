@@ -4,6 +4,7 @@ namespace UserManagement
 {
     public class User
     {
+        [Key]
         public Guid Guid { get; set; }
         public string Login { get; set; }
         public string Password { get; set; }
